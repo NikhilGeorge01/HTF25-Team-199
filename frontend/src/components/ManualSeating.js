@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Paper,
@@ -25,43 +25,43 @@ const ManualSeating = () => {
   const [seatNumber, setSeatNumber] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  useEffect(() => {
-    fetchExams();
-  }, []);
-
-  useEffect(() => {
-    if (selectedExam) {
-      fetchRooms(selectedExam);
-      fetchStudents();
-    }
-  }, [selectedExam]);
-
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     try {
       const response = await axios.get('/api/exams');
       setExams(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch exams', 'error');
     }
-  };
+  }, []);
 
-  const fetchRooms = async (examId) => {
+  const fetchRooms = useCallback(async (examId) => {
     try {
       const response = await axios.get(`/api/rooms?examId=${examId}`);
       setRooms(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch rooms', 'error');
     }
-  };
+  }, []);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const response = await axios.get('/api/users?role=student');
       setStudents(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch students', 'error');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchExams();
+  }, [fetchExams]);
+
+  useEffect(() => {
+    if (selectedExam) {
+      fetchRooms(selectedExam);
+      fetchStudents();
+    }
+  }, [selectedExam, fetchRooms, fetchStudents]);
 
   const handleAssignSeat = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Paper,
@@ -35,13 +35,7 @@ const AdminDashboard = () => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchUsers();
-    fetchRooms();
-    fetchExams();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
@@ -50,9 +44,9 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching users:", error);
     }
-  };
+  }, [token]);
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/rooms", {
         headers: { Authorization: `Bearer ${token}` },
@@ -61,9 +55,9 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
-  };
+  }, [token]);
 
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/exams", {
         headers: { Authorization: `Bearer ${token}` },
@@ -72,7 +66,15 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching exams:", error);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRooms();
+    fetchExams();
+  }, [fetchUsers, fetchRooms, fetchExams]);
+
+
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
