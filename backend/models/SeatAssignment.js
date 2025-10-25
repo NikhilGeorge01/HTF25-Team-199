@@ -6,6 +6,11 @@ const seatAssignmentSchema = new mongoose.Schema({
     ref: "Room",
     required: true,
   },
+  exam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Exam",
+    required: true,
+  },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -19,6 +24,11 @@ const seatAssignmentSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  assignmentMode: {
+    type: String,
+    enum: ['manual', 'auto-mixed', 'auto-branchwise'],
+    default: 'auto-mixed'
+  }
 });
 
 // Ensure unique seat assignments per room and exam date

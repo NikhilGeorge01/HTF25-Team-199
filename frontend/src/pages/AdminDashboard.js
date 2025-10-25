@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Paper,
@@ -17,6 +17,8 @@ import {
   Chip,
 } from "@mui/material";
 import ExamCalendar from "../components/ExamCalendar";
+import ManualSeating from "../components/ManualSeating";
+import RoomView from "../components/RoomView";
 import axios from "axios";
 
 const AdminDashboard = () => {
@@ -33,13 +35,32 @@ const AdminDashboard = () => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchUsers();
-    fetchRooms();
-    fetchExams();
+  const showError = useCallback(
+    (error) => {
+      setError(error.response?.data?.error || error.message || "An error occurred");
+    },
+    []
+  );
+
+  const handleTabChange = useCallback((event, newValue) => {
+    setTabValue(newValue);
   }, []);
 
-  const fetchUsers = async () => {
+  const handleOpenDialog = useCallback((type, exam = null) => {
+    setDialogType(type);
+    setFormData({});
+    setSelectedExam(exam);
+    setOpenDialog(true);
+  }, []);
+
+  const handleCloseDialog = useCallback(() => {
+    setOpenDialog(false);
+    setError("");
+    setSelectedExam(null);
+    setFormData({});
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
@@ -47,10 +68,11 @@ const AdminDashboard = () => {
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
+      showError(error);
     }
-  };
+  }, [token, showError]);
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/rooms", {
         headers: { Authorization: `Bearer ${token}` },
@@ -58,10 +80,11 @@ const AdminDashboard = () => {
       setRooms(response.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
+      showError(error);
     }
-  };
+  }, [token, showError]);
 
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/exams", {
         headers: { Authorization: `Bearer ${token}` },
@@ -69,28 +92,11 @@ const AdminDashboard = () => {
       setExams(response.data);
     } catch (error) {
       console.error("Error fetching exams:", error);
+      showError(error);
     }
-  };
+  }, [token, showError]);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const handleOpenDialog = (type, exam = null) => {
-    setDialogType(type);
-    setFormData({});
-    setSelectedExam(exam);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setError("");
-    setSelectedExam(null);
-    setFormData({});
-  };
-
-  const handleDeleteSchedule = async (examId, scheduleId) => {
+  const handleDeleteSchedule = useCallback(async (examId, scheduleId) => {
     try {
       await axios.delete(
         `http://localhost:5000/api/exams/${examId}/schedule/${scheduleId}`,
@@ -103,16 +109,16 @@ const AdminDashboard = () => {
       console.error("Error deleting schedule:", error);
       setError(error.response?.data?.error || "Error deleting schedule");
     }
-  };
+  }, [token, fetchExams]);
 
-  const handleFormChange = (e) => {
-    setFormData({
-      ...formData,
+  const handleFormChange = useCallback((e) => {
+    setFormData((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
-  };
+    }));
+  }, []);
 
-  const handleCsvUpload = async (event) => {
+  const handleCsvUpload = useCallback(async (event) => {
     try {
       const file = event.target.files[0];
       if (!file) return;
@@ -142,17 +148,14 @@ const AdminDashboard = () => {
         }`,
       });
 
-      // Refresh the users list
       fetchUsers();
     } catch (error) {
       setUploadStatus({
         success: false,
-        message: `Upload failed: ${
-          error.response?.data?.error || error.message
-        }`,
+        message: `Upload failed: ${error.response?.data?.error || error.message}`,
       });
     }
-  };
+  }, [token, fetchUsers]);
 
   const handleSubmit = async () => {
     try {
@@ -291,6 +294,15 @@ const AdminDashboard = () => {
                   ))}
                 </Grid>
               </>
+            )}
+
+            {tabValue === 2 && (
+              <Box>
+                <ManualSeating />
+                <Box mt={4}>
+                  <RoomView />
+                </Box>
+              </Box>
             )}
 
             {tabValue === 3 && (
