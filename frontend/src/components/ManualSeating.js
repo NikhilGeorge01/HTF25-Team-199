@@ -1,7 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Paper, Grid, TextField, Button, Select, MenuItem,
-  FormControl, InputLabel, Typography, Snackbar, Alert,
+  Box,
+  Paper,
+  Grid,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import axios from 'axios';
 
@@ -15,38 +25,45 @@ const ManualSeating = () => {
   const [seatNumber, setSeatNumber] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const showSnackbar = useCallback((message, severity) => {
-    setSnackbar({ open: true, message, severity });
+  useEffect(() => {
+    fetchExams();
   }, []);
 
-  const fetchExams = useCallback(async () => {
+  useEffect(() => {
+    if (selectedExam) {
+      fetchRooms(selectedExam);
+      fetchStudents();
+    }
+  }, [selectedExam]);
+
+  const fetchExams = async () => {
     try {
       const response = await axios.get('/api/exams');
       setExams(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch exams', 'error');
     }
-  }, [showSnackbar]);
+  };
 
-  const fetchRooms = useCallback(async (examId) => {
+  const fetchRooms = async (examId) => {
     try {
       const response = await axios.get(`/api/rooms?examId=${examId}`);
       setRooms(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch rooms', 'error');
     }
-  }, [showSnackbar]);
+  };
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = async () => {
     try {
       const response = await axios.get('/api/users?role=student');
       setStudents(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch students', 'error');
     }
-  }, [showSnackbar]);
+  };
 
-  const handleAssignSeat = useCallback(async () => {
+  const handleAssignSeat = async () => {
     try {
       await axios.put('/api/seats/manual-assign', {
         examId: selectedExam,
@@ -60,9 +77,9 @@ const ManualSeating = () => {
     } catch (error) {
       showSnackbar(error.response?.data?.error || 'Failed to assign seat', 'error');
     }
-  }, [selectedExam, selectedRoom, selectedStudent, seatNumber, showSnackbar]);
+  };
 
-  const handleClearSeat = useCallback(async () => {
+  const handleClearSeat = async () => {
     try {
       await axios.put('/api/seats/manual-clear', {
         examId: selectedExam,
@@ -74,22 +91,15 @@ const ManualSeating = () => {
     } catch (error) {
       showSnackbar(error.response?.data?.error || 'Failed to clear seat', 'error');
     }
-  }, [selectedExam, selectedRoom, seatNumber, showSnackbar]);
+  };
 
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  }, []);
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
 
-  useEffect(() => {
-    fetchExams();
-  }, [fetchExams]);
-
-  useEffect(() => {
-    if (selectedExam) {
-      fetchRooms(selectedExam);
-      fetchStudents();
-    }
-  }, [selectedExam, fetchRooms, fetchStudents]);
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   return (
     <Box p={3}>
@@ -105,7 +115,7 @@ const ManualSeating = () => {
                 <InputLabel>Exam</InputLabel>
                 <Select
                   value={selectedExam}
-                  onChange={useCallback((e) => setSelectedExam(e.target.value), [])}
+                  onChange={(e) => setSelectedExam(e.target.value)}
                   label="Exam"
                 >
                   {exams.map((exam) => (
@@ -122,7 +132,7 @@ const ManualSeating = () => {
                 <InputLabel>Room</InputLabel>
                 <Select
                   value={selectedRoom}
-                  onChange={useCallback((e) => setSelectedRoom(e.target.value), [])}
+                  onChange={(e) => setSelectedRoom(e.target.value)}
                   label="Room"
                   disabled={!selectedExam}
                 >
@@ -140,7 +150,7 @@ const ManualSeating = () => {
                 <InputLabel>Student</InputLabel>
                 <Select
                   value={selectedStudent}
-                  onChange={useCallback((e) => setSelectedStudent(e.target.value), [])}
+                  onChange={(e) => setSelectedStudent(e.target.value)}
                   label="Student"
                   disabled={!selectedRoom}
                 >
@@ -158,7 +168,7 @@ const ManualSeating = () => {
                 fullWidth
                 label="Seat Number"
                 value={seatNumber}
-                onChange={useCallback((e) => setSeatNumber(e.target.value), [])}
+                onChange={(e) => setSeatNumber(e.target.value)}
                 helperText="Format: A-01, B-15, etc."
               />
             </Grid>

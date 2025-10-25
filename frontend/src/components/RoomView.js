@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -28,39 +28,50 @@ const RoomView = () => {
   const [seatingData, setSeatingData] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const showSnackbar = useCallback((message, severity) => {
-    setSnackbar({ open: true, message, severity });
+  useEffect(() => {
+    fetchRooms();
+    fetchExams();
   }, []);
 
-  const fetchRooms = useCallback(async () => {
+  useEffect(() => {
+    if (selectedRoom && selectedExam) {
+      fetchSeatingData();
+    }
+  }, [selectedRoom, selectedExam]);
+
+  const fetchRooms = async () => {
     try {
       const response = await axios.get('/api/rooms');
       setRooms(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch rooms', 'error');
     }
-  }, [showSnackbar]);
+  };
 
-  const fetchExams = useCallback(async () => {
+  const fetchExams = async () => {
     try {
       const response = await axios.get('/api/exams');
       setExams(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch exams', 'error');
     }
-  }, [showSnackbar]);
+  };
 
-  const fetchSeatingData = useCallback(async () => {
+  const fetchSeatingData = async () => {
     try {
       const response = await axios.get(`/api/seats/room/${selectedRoom}/seating?examId=${selectedExam}`);
       setSeatingData(response.data);
     } catch (error) {
       showSnackbar('Failed to fetch seating data', 'error');
     }
-  }, [selectedRoom, selectedExam, showSnackbar]);
+  };
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
   };
 
   const handleCloseSnackbar = () => {
@@ -77,17 +88,6 @@ const RoomView = () => {
     };
     return colors[branch] || '#ffffff';
   };
-
-  useEffect(() => {
-    fetchRooms();
-    fetchExams();
-  }, [fetchRooms, fetchExams]);
-
-  useEffect(() => {
-    if (selectedRoom && selectedExam) {
-      fetchSeatingData();
-    }
-  }, [selectedRoom, selectedExam, fetchSeatingData]);
 
   return (
     <Box p={3}>
