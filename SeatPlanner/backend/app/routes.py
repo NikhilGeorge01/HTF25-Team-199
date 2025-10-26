@@ -1,8 +1,42 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from sqlalchemy import text
-from .models import db, Student, Classroom, Exam, SeatingArrangement
+from .models import db, Student, Classroom, Exam, SeatingArrangement, User
 import random
+from functools import wraps
+
+
+def get_current_user():
+    """Simple header-based auth for demo purposes.
+
+    Provide headers:
+    - X-User: username
+    - X-Token: raw password (will be checked against stored hash)
+
+    NOTE: This is a minimal approach for the project. For production use a proper
+    authentication method (JWT, session cookies, OAuth, etc.).
+    """
+    username = request.headers.get('X-User')
+    token = request.headers.get('X-Token')
+    if not username:
+        return None
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return None
+    if token:
+        if not user.check_password(token):
+            return None
+    return user
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user or user.role != 'admin':
+            return jsonify({'error': 'Admin privileges required'}), 403
+        return f(*args, **kwargs)
+    return decorated
 
 main = Blueprint('main', __name__)
 
@@ -74,6 +108,7 @@ def get_available_students(exam_id):
         return jsonify({'error': str(e)}), 500
 
 @main.route('/update-seating/<int:exam_id>', methods=['POST'])
+@admin_required
 def update_seating(exam_id):
     try:
         data = request.get_json()
@@ -127,6 +162,40 @@ def handle_students():
         'course': s.course,
         'semester': s.semester
     } for s in students])
+
+
+@main.route('/users', methods=['GET', 'POST'])
+def handle_users():
+    """Create and list users. For creation provide JSON {username, password, role}.
+    Roles: 'admin' or 'viewer'.
+    """
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        role = data.get('role', 'viewer')
+        if not username or not password:
+            return jsonify({'error': 'username and password required'}), 400
+
+        if User.query.filter_by(username=username).first():
+            return jsonify({'error': 'username already exists'}), 409
+
+        new_user = User(username=username, role=role)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'User created'}), 201
+
+    users = User.query.all()
+    return jsonify([u.to_dict() for u in users])
+
+
+@main.route('/me', methods=['GET'])
+def me():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+    return jsonify(user.to_dict())
 
 @main.route('/classrooms', methods=['GET', 'POST'])
 def handle_classrooms():
@@ -220,6 +289,10 @@ def get_exam_conflicts(exam_id):
 @main.route('/exams', methods=['GET', 'POST'])
 def handle_exams():
     if request.method == 'POST':
+        # Only admins can create/edit exams
+        user = get_current_user()
+        if not user or user.role != 'admin':
+            return jsonify({'error': 'Admin privileges required to create exams'}), 403
         data = request.get_json()
         # Handle ISO format date string from frontend
         date_str = data['date'].replace('T', ' ')
@@ -339,6 +412,7 @@ def find_optimal_seat(grid, rows, cols, course, spacing):
     return best_position
 
 @main.route('/generate-seating/<int:exam_id>', methods=['POST'])
+@admin_required
 def generate_seating(exam_id):
     exam = Exam.query.get_or_404(exam_id)
     

@@ -101,13 +101,17 @@ function SeatingPlanEditor({
 
   const handleSave = async () => {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      const authUser = localStorage.getItem('authUser');
+      const authToken = localStorage.getItem('authToken');
+      if (authUser) headers['X-User'] = authUser;
+      if (authToken) headers['X-Token'] = authToken;
+
       const response = await fetch(
         `http://localhost:5000/update-seating/${examId}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify(editedSeating),
         }
       );

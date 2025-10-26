@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import SeatingPlanEditor from "./SeatingPlanEditor";
+import LoginPage from "./LoginPage";
 
 function AddExamModal({ onClose, onAdd }) {
   const [formData, setFormData] = useState({
@@ -27,11 +28,15 @@ function AddExamModal({ onClose, onAdd }) {
       date: dateTime.toISOString().slice(0, 16),
     };
 
+    const headers = { 'Content-Type': 'application/json' };
+    const authUser = localStorage.getItem('authUser');
+    const authToken = localStorage.getItem('authToken');
+    if (authUser) headers['X-User'] = authUser;
+    if (authToken) headers['X-Token'] = authToken;
+
     fetch("http://localhost:5000/exams", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(examData),
     })
       .then((response) => response.json())
@@ -358,6 +363,17 @@ function App() {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
   const [activeTab, setActiveTab] = useState("exams");
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('currentUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('authToken') || '');
+  // mode: 'choose' (show landing), 'viewer', 'admin'
+  const [mode, setMode] = useState(() => (currentUser ? 'admin' : 'choose'));
 
   useEffect(() => {
     // Fetch exams
@@ -383,29 +399,127 @@ function App() {
     setExams([...exams, newExam]);
   };
 
+  const doLogout = () => {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    setCurrentUser(null);
+    setAuthToken('');
+    setMode('choose');
+  };
+
+  const handleLogin = (username, password) => {
+    // Try /me to validate credentials
+    fetch('http://localhost:5000/me', {
+      headers: {
+        'X-User': username,
+        'X-Token': password,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          alert('Login failed');
+          return;
+        }
+        setCurrentUser(data);
+        setAuthToken(password);
+        localStorage.setItem('currentUser', JSON.stringify(data));
+        localStorage.setItem('authToken', password);
+        localStorage.setItem('authUser', username);
+        setMode('admin');
+      })
+      .catch((err) => {
+        console.error('Login error', err);
+        alert('Login failed');
+      });
+  };
+
+  // Landing: let user choose to continue as viewer or login as admin
+  const Landing = ({ onChooseViewer, onChooseAdmin }) => (
+    <div className="landing-overlay">
+      <div className="landing-card">
+        <h2>Welcome to Exam Seating</h2>
+        <div className="landing-actions">
+          <button className="btn btn-primary" onClick={onChooseViewer}>
+            Use as User (View only)
+          </button>
+          <button className="btn btn-secondary" onClick={onChooseAdmin}>
+            Login as Admin
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // If the user hasn't chosen mode yet, show the landing page as a separate full page
+  if (mode === 'choose') {
+    return (
+      <div className="App">
+        <Landing
+          onChooseViewer={() => setMode('viewer')}
+          onChooseAdmin={() => setMode('login')}
+        />
+      </div>
+    );
+  }
+
+  // If mode is 'login' render a separate login page (full-screen) which will
+  // call handleLogin and then return control to App (mode set to 'admin').
+  if (mode === 'login') {
+    return (
+      <div className="App">
+        <LoginPage
+          onLogin={async (username, password) => {
+            await handleLogin(username, password);
+          }}
+          onBack={() => setMode('choose')}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <h1>Exam Seating Arrangement System</h1>
 
-      <div className="management-buttons">
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowAddExamModal(true)}
-        >
-          Add Exam
-        </button>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowAddStudentModal(true)}
-        >
-          Add Student
-        </button>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowAddRoomModal(true)}
-        >
-          Add Room
-        </button>
+      <div className="management-header">
+        <div>
+          {currentUser ? (
+            <div>
+              Signed in as <strong>{currentUser.username}</strong> ({currentUser.role})
+              <button className="btn btn-link" onClick={doLogout} style={{ marginLeft: 8 }}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            // show a small control to navigate to the dedicated login page
+            <button className="btn btn-link" onClick={() => setMode('login')}>
+              Login as Admin
+            </button>
+          )}
+        </div>
+        <div className="management-buttons">
+          {currentUser && currentUser.role === 'admin' && (
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowAddExamModal(true)}
+            >
+              Add Exam
+            </button>
+          )}
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowAddStudentModal(true)}
+          >
+            Add Student
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowAddRoomModal(true)}
+          >
+            Add Room
+          </button>
+        </div>
       </div>
 
       <div className="tabs">
@@ -454,6 +568,15 @@ function App() {
         <SeatingModal
           examId={selectedExam.id}
           onClose={() => setShowSeatingModal(false)}
+          currentUser={currentUser}
+        />
+      )}
+
+      {/* Landing overlay shown before user chooses a mode */}
+      {mode === 'choose' && (
+        <Landing
+          onChooseViewer={() => setMode('viewer')}
+          onChooseAdmin={() => setMode('login')}
         />
       )}
 
@@ -471,7 +594,7 @@ function App() {
                 }}
                 className="btn btn-primary"
               >
-                View/Edit Seating
+                {currentUser && currentUser.role === 'admin' ? 'View/Edit Seating' : 'View Seating'}
               </button>
             </div>
           ))}
@@ -531,7 +654,8 @@ function App() {
   );
 }
 
-function SeatingModal({ examId, onClose }) {
+function SeatingModal({ examId, onClose, currentUser }) {
+  // currentUser is provided by parent; readOnly will be true for non-admins
   const [seatingData, setSeatingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -560,8 +684,15 @@ function SeatingModal({ examId, onClose }) {
 
   const handleAutoAllocate = () => {
     setLoading(true);
+    const headers = {};
+    const authUser = localStorage.getItem('authUser');
+    const authToken = localStorage.getItem('authToken');
+    if (authUser) headers['X-User'] = authUser;
+    if (authToken) headers['X-Token'] = authToken;
+
     fetch(`http://localhost:5000/generate-seating/${examId}`, {
       method: "POST",
+      headers,
     })
       .then((response) => response.json())
       .then((data) => {
@@ -650,9 +781,11 @@ function SeatingModal({ examId, onClose }) {
         <div className="modal-header">
           <h2>{seatingData.exam_name}</h2>
           <div className="modal-actions">
-            <button className="btn btn-success" onClick={handleAutoAllocate}>
-              Auto Allocate Seats
-            </button>
+            {(!currentUser || currentUser.role !== 'admin') ? null : (
+              <button className="btn btn-success" onClick={handleAutoAllocate}>
+                Auto Allocate Seats
+              </button>
+            )}
             <button className="btn btn-primary" onClick={handlePrint}>
               Print
             </button>
@@ -679,6 +812,7 @@ function SeatingModal({ examId, onClose }) {
           onSave={(updatedSeating) => {
             setSeatingData(updatedSeating);
           }}
+          readOnly={!(currentUser && currentUser.role === 'admin')}
           getCourseColor={getCourseColor}
         />
       </div>
