@@ -1,167 +1,27 @@
-.seating-editor {
-  display: flex;
-  height: calc(100vh - 100px);
-  gap: 20px;
-  padding: 20px;
-}
+.seating-editor{display:flex;flex-direction:row;gap:20px;padding:18px;height:calc(100vh - 140px)}
+.editor-sidebar{width:300px;background:var(--card);border-radius:12px;padding:16px;box-shadow:var(--shadow);overflow:auto}
+.editor-main{flex:1;display:flex;flex-direction:column;background:var(--card);border-radius:12px;padding:18px;box-shadow:var(--shadow);overflow:auto}
+.sidebar-section{margin-bottom:18px}
+.sidebar-section h3{margin:0 0 12px 0;color:var(--primary-600)}
+.search-input{width:100%;padding:10px;border-radius:8px;border:1px solid #eef4ff;margin-bottom:12px}
+.available-students{display:flex;flex-direction:column;gap:10px}
+.student-item{background:#fff;padding:12px;border-radius:10px;border:1px solid #eef4ff;cursor:move}
+.student-item:hover{background:#fbfdff}
+.student-course{font-size:0.85em;color:var(--muted)}
+.classroom-tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tab-button{padding:8px 12px;border-radius:10px;border:none;background:#f3f4f6}
+.tab-button.active{background:var(--primary);color:#fff}
+.classroom-grid{display:flex;flex-direction:column;gap:8px;padding:16px;background:#f8fafc;border-radius:10px;overflow:auto;flex:1}
+.grid-row{display:flex;gap:8px}
+.grid-cell{min-width:90px;min-height:72px;border:1px dashed #e6eefc;display:flex;align-items:center;justify-content:center;padding:6px;background:#fff;border-radius:8px}
+.grid-cell.occupied{border:1px solid var(--primary)}
+.seated-student{width:100%;height:100%;background:linear-gradient(180deg,rgba(37,99,235,0.08),rgba(37,99,235,0.03));border-radius:8px;padding:6px;font-size:0.85em;cursor:move;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.seated-student:hover{filter:brightness(0.98)}
+.editor-actions{margin-top:18px;display:flex;gap:10px;justify-content:flex-end}
+.save-button,.close-button{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.save-button{background:var(--success);color:#fff}
+.save-button:hover{filter:brightness(0.95)}
+.close-button{background:var(--danger);color:#fff}
+.close-button:hover{filter:brightness(0.95)}
 
-.editor-sidebar {
-  width: 300px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 15px;
-  overflow-y: auto;
-}
-
-.editor-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  overflow-y: auto;
-}
-
-.sidebar-section {
-  margin-bottom: 20px;
-}
-
-.sidebar-section h3 {
-  margin: 0 0 15px 0;
-  color: #2c3e50;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.available-students {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.student-item {
-  background: #fff;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  cursor: move;
-}
-
-.student-item:hover {
-  background: #f0f0f0;
-}
-
-.student-course {
-  font-size: 0.8em;
-  color: #666;
-}
-
-.classroom-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.tab-button {
-  padding: 8px 16px;
-  border: none;
-  background: #f0f0f0;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.tab-button.active {
-  background: #007bff;
-  color: white;
-}
-
-.classroom-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  overflow: auto;
-  flex: 1;
-}
-
-.grid-row {
-  display: flex;
-  gap: 5px;
-}
-
-.grid-cell {
-  width: 120px;
-  height: 80px;
-  border: 1px dashed #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px;
-  background: #fff;
-}
-
-.grid-cell.occupied {
-  border: 1px solid #007bff;
-}
-
-.seated-student {
-  width: 100%;
-  height: 100%;
-  background: #e3f2fd;
-  border-radius: 4px;
-  padding: 5px;
-  font-size: 0.8em;
-  cursor: move;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.seated-student:hover {
-  background: #bbdefb;
-}
-
-.editor-actions {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.save-button,
-.close-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.save-button {
-  background: #28a745;
-  color: white;
-}
-
-.save-button:hover {
-  background: #218838;
-}
-
-.close-button {
-  background: #dc3545;
-  color: white;
-}
-
-.close-button:hover {
-  background: #c82333;
-}
+@media(max-width:900px){.editor-sidebar{display:none}.seating-editor{height:auto;flex-direction:column;padding:12px}}
