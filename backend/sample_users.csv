@@ -1,8 +1,0 @@
-username,password,role,fullName,rollNumber,staffId,branch,year
-staff001,staff123,staff,John Smith,,STF001,,
-staff002,staff123,staff,Mary Johnson,,STF002,,
-student001,pass123,student,Alice Brown,R2025001,,CSE,2
-student002,pass123,student,Bob Wilson,R2025002,,ECE,2
-student003,pass123,student,Carol Davis,R2025003,,IT,2
-student004,pass123,student,David Lee,R2025004,,MECH,2
-student005,pass123,student,Emma White,R2025005,,CSE,3
